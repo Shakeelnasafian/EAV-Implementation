@@ -38,7 +38,10 @@ php artisan key:generate
 
 php artisan migrate --seed
 
-php artisan passport:install
+php artisan passport:keys --force
+
+** php artisan passport:install --force this will create migration files which is not needed **
+
 ```
 
 ## **API Usage Examples**

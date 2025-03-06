@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('attributes', function (Blueprint $table) {
             $table->id();
+            $table->string('name'); // e.g. 'department', 'start_date'
+            $table->string('type'); // e.g. 'text', 'date', 'number', 'select'
             $table->timestamps();
         });
     }

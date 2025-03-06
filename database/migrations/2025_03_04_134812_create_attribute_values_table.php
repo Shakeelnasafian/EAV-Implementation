@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('attribute_values', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('attribute_id')->constrained()->onDelete('cascade');
+            $table->unsignedBigInteger('entity_id'); // references project ID
+            $table->text('value')->nullable();
             $table->timestamps();
         });
     }

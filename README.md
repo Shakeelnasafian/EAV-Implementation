@@ -40,7 +40,7 @@ php artisan migrate --seed
 
 php artisan passport:keys --force
 
-** php artisan passport:install --force   # this will create migration files which are not needed **
+**php artisan passport:install --force   # this will create migration files which are not needed**
 
 ```
 

@@ -6,6 +6,11 @@ use App\Http\Requests\BaseFormRequest;
 
 class UpdateTimesheetRequest extends BaseFormRequest
 {
+    /**
+     * Validation rules for updating a timesheet request.
+     *
+     * @return array<string,string> Mapping of request fields to Laravel validation rule strings.
+     */
     public function rules(): array
     {
         return [

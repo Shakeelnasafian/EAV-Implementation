@@ -6,6 +6,11 @@ use App\Http\Requests\BaseFormRequest;
 
 class StoreProjectRequest extends BaseFormRequest
 {
+    /**
+     * Validation rules for storing a project request.
+     *
+     * @return array<string,string> Associative array mapping request fields to their validation rules.
+     */
     public function rules(): array
     {
         return [

@@ -3,6 +3,8 @@
 namespace App\Support;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ApiResponse
 {
@@ -47,5 +49,29 @@ class ApiResponse
     public static function serverError(string $message = 'An unexpected error occurred'): JsonResponse
     {
         return static::error($message, 500);
+    }
+
+    /**
+     * Return a paginated response — flattens resource collection + pagination meta
+     * into a single consistent envelope instead of nesting data.data.
+     */
+    public static function paginated(AnonymousResourceCollection $resource, string $message = 'Success'): JsonResponse
+    {
+        $payload = $resource->toResponse(request())->getData(true);
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'data'    => $payload['data'],
+            'meta'    => [
+                'current_page' => $payload['meta']['current_page'],
+                'last_page'    => $payload['meta']['last_page'],
+                'per_page'     => $payload['meta']['per_page'],
+                'total'        => $payload['meta']['total'],
+                'from'         => $payload['meta']['from'],
+                'to'           => $payload['meta']['to'],
+            ],
+            'links' => $payload['links'],
+        ]);
     }
 }

@@ -27,6 +27,7 @@ class User extends Authenticatable
         'last_name',
         'email',
         'password',
+        'role',
     ];
 
     /**
@@ -66,5 +67,20 @@ class User extends Authenticatable
     public function timesheets(): HasMany
     {
         return $this->hasMany(Timesheet::class);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isManager(): bool
+    {
+        return $this->role === 'manager';
+    }
+
+    public function hasRole(string ...$roles): bool
+    {
+        return in_array($this->role, $roles);
     }
 }

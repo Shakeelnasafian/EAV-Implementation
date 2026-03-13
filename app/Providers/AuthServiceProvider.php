@@ -9,24 +9,18 @@ class AuthServiceProvider extends ServiceProvider
 {
 
     protected $policies = [
-        // 'App\Models\Model' => 'App\Policies\ModelPolicy',
+        \App\Models\Attribute::class => \App\Policies\AttributePolicy::class,
+        \App\Models\Project::class   => \App\Policies\ProjectPolicy::class,
+        \App\Models\Timesheet::class => \App\Policies\TimesheetPolicy::class,
     ];
 
-    /**
-     * Register services.
-     */
     public function register(): void
     {
         Passport::ignoreRoutes();
     }
 
-    /**
-     * Bootstrap services.
-     */
     public function boot(): void
     {
         $this->registerPolicies();
-
-        //Passport::routes();
     }
 }

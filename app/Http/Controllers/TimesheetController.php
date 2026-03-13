@@ -2,137 +2,57 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Timesheet\CreateTimesheetAction;
+use App\Actions\Timesheet\DeleteTimesheetAction;
+use App\Actions\Timesheet\UpdateTimesheetAction;
+use App\Http\Requests\Timesheet\StoreTimesheetRequest;
+use App\Http\Requests\Timesheet\UpdateTimesheetRequest;
+use App\Http\Resources\TimesheetResource;
 use App\Models\Timesheet;
-use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Services\TimesheetService;
+use App\Support\ApiResponse;
 
 class TimesheetController extends Controller
 {
-    /**
-     * Display a listing of timesheets.
-     */
+    public function __construct(private readonly TimesheetService $timesheetService) {}
+
     public function index()
     {
-        try {
-            // Eager-load related user and project
-            $timesheets = Timesheet::with(['user', 'project'])->get();
+        $timesheets = $this->timesheetService->getAll();
 
-            if ($timesheets->isEmpty()) {
-                return response()->json(['message' => 'No timesheets found'], 404);
-            }
-
-            return response()->json($timesheets, 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error'   => 'An unexpected error occurred',
-                'message' => $e->getMessage(),
-            ], 500);
+        if ($timesheets->isEmpty()) {
+            return ApiResponse::notFound('No timesheets found');
         }
+
+        return ApiResponse::success(TimesheetResource::collection($timesheets));
     }
 
-    /**
-     * Store a newly created timesheet.
-     */
-    public function store(Request $request)
+    public function store(StoreTimesheetRequest $request, CreateTimesheetAction $action)
     {
-        try {
-            $validated = $request->validate([
-                'task_name'  => 'required|string|max:255',
-                'date'       => 'required|date',
-                'hours'      => 'required|numeric|min:0.1',
-                'user_id'    => 'required|exists:users,id',
-                'project_id' => 'required|exists:projects,id',
-            ]);
+        $timesheet = $action->handle($request->validated());
+        $timesheet->load(['user', 'project']);
 
-            $timesheet = Timesheet::create($validated);
-
-            return response()->json($timesheet, 201);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'error'   => 'Validation failed',
-                'message' => $e->errors(),
-            ], 422);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error'   => 'An unexpected error occurred',
-                'message' => $e->getMessage(),
-            ], 500);
-        }
+        return ApiResponse::created(new TimesheetResource($timesheet), 'Timesheet created successfully');
     }
 
-    /**
-     * Display the specified timesheet.
-     */
     public function show(Timesheet $timesheet)
     {
-        try {
-            if (!$timesheet) {
-                return response()->json(['error' => 'Timesheet not found'], 404);
-            }
+        $timesheet->load(['user', 'project']);
 
-            $timesheet->load('user', 'project');
-
-            return response()->json($timesheet, 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error'   => 'An unexpected error occurred',
-                'message' => $e->getMessage(),
-            ], 500);
-        }
+        return ApiResponse::success(new TimesheetResource($timesheet));
     }
 
-    /**
-     * Update the specified timesheet.
-     */
-    public function update(Request $request, Timesheet $timesheet)
+    public function update(UpdateTimesheetRequest $request, Timesheet $timesheet, UpdateTimesheetAction $action)
     {
-        try {
-            if (!$timesheet) {
-                return response()->json(['error' => 'Timesheet not found'], 404);
-            }
+        $timesheet = $action->handle($timesheet, $request->validated());
 
-            $validated = $request->validate([
-                'task_name'  => 'sometimes|string|max:255',
-                'date'       => 'sometimes|date',
-                'hours'      => 'sometimes|numeric|min:0.1',
-                'user_id'    => 'sometimes|exists:users,id',
-                'project_id' => 'sometimes|exists:projects,id',
-            ]);
-
-            $timesheet->update($validated);
-
-            return response()->json($timesheet, 200);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'error'   => 'Validation failed',
-                'message' => $e->errors(),
-            ], 422);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error'   => 'An unexpected error occurred',
-                'message' => $e->getMessage(),
-            ], 500);
-        }
+        return ApiResponse::success(new TimesheetResource($timesheet), 'Timesheet updated successfully');
     }
 
-    /**
-     * Remove the specified timesheet.
-     */
-    public function destroy(Timesheet $timesheet)
+    public function destroy(Timesheet $timesheet, DeleteTimesheetAction $action)
     {
-        try {
-            if (!$timesheet) {
-                return response()->json(['error' => 'Timesheet not found'], 404);
-            }
+        $action->handle($timesheet);
 
-            $timesheet->delete();
-
-            return response()->json(['message' => 'Timesheet deleted successfully'], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error'   => 'An unexpected error occurred',
-                'message' => $e->getMessage(),
-            ], 500);
-        }
+        return ApiResponse::success(null, 'Timesheet deleted successfully');
     }
 }

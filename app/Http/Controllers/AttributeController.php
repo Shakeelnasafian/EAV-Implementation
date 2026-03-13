@@ -2,135 +2,70 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Attribute;
-use Illuminate\Http\Request;
+use App\Actions\Attribute\CreateAttributeAction;
+use App\Actions\Attribute\DeleteAttributeAction;
+use App\Actions\Attribute\UpdateAttributeAction;
+use App\Http\Requests\Attribute\StoreAttributeRequest;
+use App\Http\Requests\Attribute\UpdateAttributeRequest;
+use App\Http\Resources\AttributeResource;
+use App\Services\AttributeService;
+use App\Support\ApiResponse;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class AttributeController extends Controller
 {
-    /**
-     * List all attributes.
-     */
+    public function __construct(private readonly AttributeService $attributeService) {}
+
     public function index()
     {
-        try {
-            $attributes = Attribute::all();
+        $attributes = $this->attributeService->getAll();
 
-            if ($attributes->isEmpty()) {
-                return response()->json(['message' => 'No attributes found'], 404);
-            }
-
-            return response()->json($attributes, 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error'   => 'An unexpected error occurred',
-                'message' => $e->getMessage(),
-            ], 500);
+        if ($attributes->isEmpty()) {
+            return ApiResponse::notFound('No attributes found');
         }
+
+        return ApiResponse::success(AttributeResource::collection($attributes));
     }
 
-    /**
-     * Create an attribute.
-     */
-    public function store(Request $request)
+    public function store(StoreAttributeRequest $request, CreateAttributeAction $action)
     {
-        try {
-            $validated = $request->validate([
-                'name' => 'required|string|unique:attributes,name|max:255',
-                'type' => 'required|string|in:text,date,number,select',
-            ]);
+        $attribute = $action->handle($request->validated());
 
-            $attribute = Attribute::create($validated);
-
-            return response()->json([
-                'message'   => 'Attribute created successfully',
-                'attribute' => $attribute,
-            ], 201);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'error'   => 'Validation failed',
-                'message' => $e->errors(),
-            ], 422);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error'   => 'An unexpected error occurred',
-                'message' => $e->getMessage(),
-            ], 500);
-        }
+        return ApiResponse::created(new AttributeResource($attribute), 'Attribute created successfully');
     }
 
-    /**
-     * Show one attribute.
-     */
     public function show($id)
     {
         try {
-            $attribute = Attribute::findOrFail($id);
+            $attribute = $this->attributeService->findById($id);
 
-            return response()->json($attribute, 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json(['error' => 'Attribute not found'], 404);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error'   => 'An unexpected error occurred',
-                'message' => $e->getMessage(),
-            ], 500);
+            return ApiResponse::success(new AttributeResource($attribute));
+        } catch (ModelNotFoundException) {
+            return ApiResponse::notFound('Attribute not found');
         }
     }
 
-    /**
-     * Update an attribute.
-     */
-    public function update(Request $request, $id)
+    public function update(UpdateAttributeRequest $request, $id, UpdateAttributeAction $action)
     {
         try {
-            $attribute = Attribute::findOrFail($id);
+            $attribute = $this->attributeService->findById($id);
+            $attribute = $action->handle($attribute, $request->validated());
 
-            $validated = $request->validate([
-                'name' => 'sometimes|string|unique:attributes,name,' . $attribute->id . '|max:255',
-                'type' => 'sometimes|string|in:text,date,number,select',
-            ]);
-
-            $attribute->update($validated);
-
-            return response()->json([
-                'message'   => 'Attribute updated successfully',
-                'attribute' => $attribute,
-            ], 200);
-
-        } catch (ModelNotFoundException $e) {
-            return response()->json(['error' => 'Attribute not found'], 404);
-            
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'error'   => 'Validation failed',
-                'message' => $e->errors(),
-            ], 422);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error'   => 'An unexpected error occurred',
-                'message' => $e->getMessage(),
-            ], 500);
+            return ApiResponse::success(new AttributeResource($attribute), 'Attribute updated successfully');
+        } catch (ModelNotFoundException) {
+            return ApiResponse::notFound('Attribute not found');
         }
     }
 
-    /**
-     * Delete an attribute.
-     */
-    public function destroy($id)
+    public function destroy($id, DeleteAttributeAction $action)
     {
         try {
-            $attribute = Attribute::findOrFail($id);
-            $attribute->delete();
+            $attribute = $this->attributeService->findById($id);
+            $action->handle($attribute);
 
-            return response()->json(['message' => 'Attribute deleted successfully'], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json(['error' => 'Attribute not found'], 404);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error'   => 'An unexpected error occurred',
-                'message' => $e->getMessage(),
-            ], 500);
+            return ApiResponse::success(null, 'Attribute deleted successfully');
+        } catch (ModelNotFoundException) {
+            return ApiResponse::notFound('Attribute not found');
         }
     }
 }

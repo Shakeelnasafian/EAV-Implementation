@@ -6,6 +6,11 @@ use App\Http\Requests\BaseFormRequest;
 
 class UpdateProjectRequest extends BaseFormRequest
 {
+    /**
+     * Get the validation rules for updating a project.
+     *
+     * @return array<string,string> Associative array mapping request field names to their validation rules.
+     */
     public function rules(): array
     {
         return [

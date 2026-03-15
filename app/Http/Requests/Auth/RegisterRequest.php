@@ -6,6 +6,11 @@ use App\Http\Requests\BaseFormRequest;
 
 class RegisterRequest extends BaseFormRequest
 {
+    /**
+     * Validation rules for the user registration request.
+     *
+     * @return array<string, string> Associative array mapping request field names to their Laravel validation rule strings.
+     */
     public function rules(): array
     {
         return [
